@@ -35,30 +35,29 @@ private class FunctionSAPDoc(text: String) {
                     val textAfter = textWithoutParenthesis.substring(startIndex = index + 1)
                     val countQuotBefore = textBefore.count { charBefore -> charBefore == '"' }
                     val countQuotAfter = textAfter.count { charAfter -> charAfter == '"' }
-                    if ((countQuotAfter.isEven() || countQuotAfter == 0) && (countQuotBefore.isEven() || countQuotBefore == 0)) commasIndexes.add(index)
+                    if ((countQuotAfter.isEven() || countQuotAfter == 0) && (countQuotBefore.isEven() || countQuotBefore == 0)) commasIndexes.add(
+                        index
+                    )
                 }
             }
             StringBuilder(textWithoutParenthesis).apply {
                 commasIndexes.forEach { index -> replace(index, index + 1, PARAMETER_DELIMITER) }
             }.toString()
         }
-        this.parameters = parametersText.split(PARAMETER_DELIMITER).map { FunctionParameter(text = it.trim()) }
+        this.parameters = if (parametersText.trim().isEmpty()) {
+            emptyList()
+        } else {
+            parametersText.split(PARAMETER_DELIMITER).map { FunctionParameter(text = it.trim()) }
+        }
 
         val callNativeFunction = StringBuilder().apply {
-            append("=\r\ncallFunction(\"")
+            append("=\r\ncallFunction${returnType.kotlinText}(\"")
             append(functionNameSAP)
             append("\"")
             parameters.forEach { parameter ->
                 append(",${parameter.name}")
-                if (parameter.isByRef) {
-                    if (parameter.isArray) {
-                        append(".safeArray")
-                    } else {
-                        append(".variant")
-                    }
-                }
             }
-            append(").${toJavaConvention(returnType.kotlinText)}")
+            append(")")
         }.toString()
 
         this.kotlinText = StringBuilder().apply {
@@ -82,7 +81,10 @@ private class FunctionParameter(val text: String) {
     val kotlinText: String
 
     init {
-        val list = text.replace("Optional ByVal", "OptionalByVal").replace("Optional ByRef", "OptionalByRef").split(regexEmptySpaces)
+//        println(text)
+        val list = text.replace("Optional ByVal", "OptionalByVal").replace("Optional ByRef", "OptionalByRef")
+            .split(regexEmptySpaces)
+//        println(list)
         this.isOptional = list[prefixIndex].contains("Optional")
         this.isByRef = list[prefixIndex].contains("ByRef")
         this.name = toJavaConvention(name = list[nameIndex])
@@ -99,11 +101,18 @@ private class FunctionParameter(val text: String) {
             append(parameterType.kotlinText)
             if (isArray) append("Array")
             if (isByRef) append("ByRef")
-            if (optionalValue != null) {
-                if (parameterType == ParameterType.BOOLEAN) {
-                    append("=${optionalValue.replace('T', 't').replace('F', 'f')}")
-                } else {
-                    append("=$optionalValue")
+            if (isOptional) {
+                append("=")
+                if (optionalValue != null) {
+                    if (parameterType == ParameterType.BOOLEAN) {
+                        append(optionalValue.replace('T', 't').replace('F', 'f'))
+                    } else {
+                        if (parameterType.isEnum) {
+                            append("${parameterType.enumClassName}.$optionalValue.sapId")
+                        } else {
+                            append("$optionalValue")
+                        }
+                    }
                 }
             }
         }.toString()
@@ -116,18 +125,37 @@ private class FunctionParameter(val text: String) {
     }
 }
 
-private enum class ParameterType(val sapText: String, val kotlinText: String) {
-    STRING(sapText = "String", kotlinText = "String"),
-    BOOLEAN(sapText = "Boolean", kotlinText = "Boolean"),
-    DOUBLE(sapText = "Double", kotlinText = "Double"),
-    INT(sapText = "Long", kotlinText = "Int"),
-    ITEM_TYPE(sapText = "eItemType", kotlinText = "ItemType"),
-    LOAD_CASE_TYPE(sapText = "eLoadCaseType",kotlinText = "LoadCaseType"),
-    LOAD_PATTERN_TYPE(sapText = "eLoadPatternType",kotlinText = "LoadPatternType");
+private enum class ParameterType(
+    val sapText: String,
+    val kotlinText: String,
+    val isEnum: Boolean,
+    val enumClassName: String
+) {
+    STRING(sapText = "String", kotlinText = "String", isEnum = false, enumClassName = ""),
+    BOOLEAN(sapText = "Boolean", kotlinText = "Boolean", isEnum = false, enumClassName = ""),
+    DOUBLE(sapText = "Double", kotlinText = "Double", isEnum = false, enumClassName = ""),
+    INT(sapText = "Long", kotlinText = "Int", isEnum = false, enumClassName = ""),
+    UNITS(sapText = "eUnits", kotlinText = "Int", isEnum = true, enumClassName = "Units"),
+    MAT_TYPE(sapText = "eMatType", kotlinText = "Int", isEnum = true, enumClassName = "MatType"),
+    ITEM_TYPE(sapText = "eItemType", kotlinText = "Int", isEnum = true, enumClassName = "ItemType"),
+    LOAD_PATTERN_TYPE(
+        sapText = "eLoadPatternType",
+        kotlinText = "Int",
+        isEnum = true,
+        enumClassName = "LoadPatternType"
+    ),
+    C_TYPE(sapText = "eCType", kotlinText = "Int", isEnum = true, enumClassName = "CType"),
+    ITEM_TYPE_ELM(sapText = "eItemTypeElm", kotlinText = "Int", isEnum = true, enumClassName = "ItemTypeElm"),
+    E2D_FRAME_TYPE(sapText = "e2DFrameType", kotlinText = "Int", isEnum = true, enumClassName = "E2DFrameType"),
+    E3D_FRAME_TYPE(sapText = "e3DFrameType", kotlinText = "Int", isEnum = true, enumClassName = "E3DFrameType"),
+    CONSTRAINT_TYPE(sapText = "eConstraintType", kotlinText = "Int", isEnum = true, enumClassName = "ConstraintType"),
+    CONSTRAINT_AXIS(sapText = "eConstraintAxis", kotlinText = "Int", isEnum = true, enumClassName = "ConstraintAxis"),
+    LOAD_CASE_TYPE(sapText = "eLoadCaseType", kotlinText = "Int", isEnum = true, enumClassName = "LoadCaseType");
 
     companion object {
         private val map = ParameterType.values().associate { it.sapText to it }
 
-        fun get(text: String) = map.getOrElse(key = text) { throw IllegalArgumentException("ParameterType '$text' nonexistent.") }
+        fun get(text: String) =
+            map.getOrElse(key = text) { throw IllegalArgumentException("ParameterType '$text' nonexistent.") }
     }
 }

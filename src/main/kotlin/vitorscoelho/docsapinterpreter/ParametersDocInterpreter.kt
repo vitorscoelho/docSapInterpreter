@@ -8,10 +8,31 @@ class SAPDoc(text: String) {
     val kotlinText: String
 
     init {
-        val functionText: String = functionText(text)
-        val docText: String = docText(text)
+        val textReplaceUnits = transformUnits(text)
+        val functionText: String = functionText(textReplaceUnits)
+        val docText: String = docText(textReplaceUnits)
         this.kotlinText = "$docText\r\n$functionText"
         println(this.kotlinText)
+    }
+
+    private fun transformUnits(text: String): String {
+        return text
+            .replace("[F]", "(F)")
+            .replace("[F/L2]", "(F/L2)")
+            .replace("[1/L]", "(1/L)")
+            .replace("[L/L]", "(L/L)")
+            .replace("[T]", "(T)")
+            .replace("[T/L]", "(T/L)")
+            .replace("[deg]", "(deg)")
+            .replace("[L]", "(L)")
+            .replace("[rad]", "(rad)")
+            .replace("[F/L]", "(F/L)")
+            .replace("[FL/L]", "(FL/L)")
+            .replace("[FL]", "(FL)")
+            .replace("[FL/rad]", "(FL/rad)")
+            .replace("[s]", "(s)")
+            .replace("[cyc/s]", "(cyc/s)")
+            .replace("[L/s2]","(L/s2)")
     }
 
     private fun functionText(text: String): String {
@@ -36,7 +57,7 @@ class SAPDoc(text: String) {
         val functionReturnsText = if (pDocFunctionDescription.last().text().contains("returns")) {
             "@return${pDocFunctionDescription.last().text().substringAfter("returns")}"
         } else {
-            throw IllegalArgumentException("This text has no 'returns' field.")
+            throw IllegalArgumentException("This text has no 'returns' field. (${functionText(text)})")
         }
 
         val doc = Jsoup.parse(text.substringAfter("<h2>Parameters</h2>").substringBefore("<h2>Remarks</h2>"))
@@ -58,14 +79,3 @@ class SAPDoc(text: String) {
         return stringBuilder.toString()
     }
 }
-/**
- * This function adds a new frame object whose end points are specified by name.
- * @param point1 The name of a defined point object at the I-End of the added frame object.
- * @param point2 The name of a defined point object at the J-End of the added frame object.
- * @param name This is the name that the program ultimately assigns for the frame object. If no UserName is specified, the program assigns a default name to the frame object. If a UserName is specified and that name is not used for another frame, cable or tendon object, the UserName is assigned to the frame object, otherwise a default name is assigned to the frame object.
- * @param propName This is Default, None, or the name of a defined frame section property. If it is Default, the program assigns a default section property to the frame object. If it is None, no section property is assigned to the frame object. If it is the name of a defined frame section property, that property is assigned to the frame object.
- * @param userName This is an optional user specified name for the frame object. If a UserName is specified and that name is already used for another frame object, the program ignores the UserName.
- * @return zero if the frame object is successfully added, otherwise it returns a nonzero value.
- */
-//fun addByPoint(point1: String, point2: String, name: StringByRef = StringByRef.NONE, propName: String = "Default", userName: String = ""): Int =
-//      callFunction("AddByPoint", point1, point2, name.variant, propName, userName).int
