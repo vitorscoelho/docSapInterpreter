@@ -24,6 +24,7 @@ private class FunctionSAPDoc(text: String) {
     val kotlinText: String
 
     init {
+//        println("NEW TEXT: $newText")
         //fun addByPoint(point1: String, point2: String, name: StringByRef = StringByRef.NONE, propName: String = "Default", userName: String = ""): Int =
         val parametersText = let {
             val textWithoutParenthesis = newText.substringAfter('(').substringBeforeLast(')')
@@ -106,6 +107,12 @@ private class FunctionParameter(val text: String) {
                 if (optionalValue != null) {
                     if (parameterType == ParameterType.BOOLEAN) {
                         append(optionalValue.replace('T', 't').replace('F', 'f'))
+                    } else if (parameterType == ParameterType.DOUBLE) {
+                        if (optionalValue.contains('.')) {
+                            append(optionalValue)
+                        } else {
+                            append("$optionalValue.0")
+                        }
                     } else {
                         if (parameterType.isEnum) {
                             append("${parameterType.enumClassName}.$optionalValue.sapId")
@@ -150,7 +157,30 @@ private enum class ParameterType(
     E3D_FRAME_TYPE(sapText = "e3DFrameType", kotlinText = "Int", isEnum = true, enumClassName = "E3DFrameType"),
     CONSTRAINT_TYPE(sapText = "eConstraintType", kotlinText = "Int", isEnum = true, enumClassName = "ConstraintType"),
     CONSTRAINT_AXIS(sapText = "eConstraintAxis", kotlinText = "Int", isEnum = true, enumClassName = "ConstraintAxis"),
-    LOAD_CASE_TYPE(sapText = "eLoadCaseType", kotlinText = "Int", isEnum = true, enumClassName = "LoadCaseType");
+    LOAD_CASE_TYPE(sapText = "eLoadCaseType", kotlinText = "Int", isEnum = true, enumClassName = "LoadCaseType"),
+    FRAME_PROP_TYPE(sapText = "eFramePropType", kotlinText = "Int", isEnum = true, enumClassName = "FramePropType"),
+    MAT_TYPE_STEEL(sapText = "eMatTypeSteel", kotlinText = "Int", isEnum = true, enumClassName = "MatTypeSteel"),
+    MAT_TYPE_CONCRETE(
+        sapText = "eMatTypeConcrete",
+        kotlinText = "Int",
+        isEnum = true,
+        enumClassName = "MatTypeConcrete"
+    ),
+    MAT_TYPE_ALUMINUM(
+        sapText = "eMatTypeAluminum",
+        kotlinText = "Int",
+        isEnum = true,
+        enumClassName = "MatTypeAluminum"
+    ),
+    MAT_TYPE_COLD_FORMED(
+        sapText = "eMatTypeColdFormed",
+        kotlinText = "Int",
+        isEnum = true,
+        enumClassName = "MatTypeColdFormed"
+    ),
+    MAT_TYPE_REBAR(sapText = "eMatTypeRebar", kotlinText = "Int", isEnum = true, enumClassName = "MatTypeRebar"),
+    MAT_TYPE_TENDON(sapText = "eMatTypeTendon",kotlinText = "Int",isEnum = true,enumClassName = "MatTypeTendon"),
+    LINK_PROP_TYPES(sapText = "eLinkPropType",kotlinText = "Int",isEnum = true,enumClassName = "LinkPropType");
 
     companion object {
         private val map = ParameterType.values().associate { it.sapText to it }
