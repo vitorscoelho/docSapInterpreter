@@ -6,9 +6,17 @@ import java.lang.StringBuilder
 
 class SAPDoc(text: String) {
     val kotlinText: String
+    val functionSAPDoc: FunctionSAPDoc
 
     init {
-        val functionText: String = functionText(text)
+        this.functionSAPDoc = FunctionSAPDoc(
+            text.substringBefore("<h2>Parameters</h2>").substringAfter("<h2>VB6 Procedure</h2>").substringAfter(
+                "<p class=Comment>"
+            ).substringBefore("</p>")
+                .replace("ByVal", "ByVal ")
+                .replace("ByRef", "ByRef ")
+        )
+        val functionText: String = this.functionSAPDoc.kotlinText
         val docText: String = transformUnits(docText(text))
         this.kotlinText = "$docText\r\n$functionText"
 //        println(this.kotlinText)
@@ -52,16 +60,6 @@ class SAPDoc(text: String) {
             .replace("[L/s]", "(L/s)")
             .replace("[rad/s]", "(rad/s)")
             .replace("[L2/L]", "(L2/L)")
-    }
-
-    private fun functionText(text: String): String {
-        return functionInterpreter(
-            text.substringBefore("<h2>Parameters</h2>").substringAfter("<h2>VB6 Procedure</h2>").substringAfter(
-                "<p class=Comment>"
-            ).substringBefore("</p>")
-                .replace("ByVal", "ByVal ")
-                .replace("ByRef", "ByRef ")
-        )
     }
 
     private fun docText(text: String): String {

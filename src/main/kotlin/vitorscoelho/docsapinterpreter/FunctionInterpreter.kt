@@ -11,11 +11,11 @@ Function SetLoadDistributed(ByVal Name As String, ByVal
  ByVal ItemType As eItemType = Object) As Long
  */
 
-internal fun functionInterpreter(text: String): String {
-    return FunctionSAPDoc(text).kotlinText
-}
+//internal fun functionInterpreter(text: String): String {
+//    return FunctionSAPDoc(text).kotlinText
+//}
 
-private class FunctionSAPDoc(text: String) {
+class FunctionSAPDoc(text: String) {
     private val newText = text.replace("&quot;", "\"").replace(regexBreakLine, " ").replace(regexEmptySpaces, " ")
     val functionNameSAP = newText.substringBefore('(').split(regexEmptySpaces)[1]
     val functionName: String = toJavaConvention(functionNameSAP)
@@ -72,7 +72,7 @@ private class FunctionSAPDoc(text: String) {
     }
 }
 
-private class FunctionParameter(val text: String) {
+class FunctionParameter(val text: String) {
     val isOptional: Boolean
     val isByRef: Boolean
     val name: String
@@ -99,9 +99,13 @@ private class FunctionParameter(val text: String) {
         this.kotlinText = StringBuilder().apply {
             append(name)
             append(":")
+            if (isByRef) append("A")
             append(parameterType.kotlinText)
             if (isArray) append("Array")
-            if (isByRef) append("ByRef")
+            if (isByRef) {
+                append("ByRef")
+                append("=${parameterType.kotlinText}ByRef.UNNECESSARY")
+            }
             if (isOptional) {
                 append("=")
                 if (optionalValue != null) {
@@ -132,7 +136,7 @@ private class FunctionParameter(val text: String) {
     }
 }
 
-private enum class ParameterType(
+enum class ParameterType(
     val sapText: String,
     val kotlinText: String,
     val isEnum: Boolean,
@@ -179,8 +183,8 @@ private enum class ParameterType(
         enumClassName = "MatTypeColdFormed"
     ),
     MAT_TYPE_REBAR(sapText = "eMatTypeRebar", kotlinText = "Int", isEnum = true, enumClassName = "MatTypeRebar"),
-    MAT_TYPE_TENDON(sapText = "eMatTypeTendon",kotlinText = "Int",isEnum = true,enumClassName = "MatTypeTendon"),
-    LINK_PROP_TYPES(sapText = "eLinkPropType",kotlinText = "Int",isEnum = true,enumClassName = "LinkPropType");
+    MAT_TYPE_TENDON(sapText = "eMatTypeTendon", kotlinText = "Int", isEnum = true, enumClassName = "MatTypeTendon"),
+    LINK_PROP_TYPES(sapText = "eLinkPropType", kotlinText = "Int", isEnum = true, enumClassName = "LinkPropType");
 
     companion object {
         private val map = ParameterType.values().associate { it.sapText to it }
