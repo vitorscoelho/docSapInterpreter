@@ -54,6 +54,6 @@ enum class TipoDeParametro(
         private val map = TipoDeParametro.values().associate { it.sapText to it }
 
         fun get(text: String) =
-            map.getOrElse(key = text) { throw IllegalArgumentException("ParameterType '$text' nonexistent.") }
+            map.getOrElse(key = text) { throw IllegalArgumentException("TipoDeParametro '$text' inexistente.") }
     }
 }

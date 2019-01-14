@@ -3,7 +3,26 @@ package vitorscoelho.docsapinterpreter
 import vitorscoelho.docsapinterpreter.filecomparator.Pasta
 import vitorscoelho.docsapinterpreter.interpretadorfuncoes.Interpretador
 import vitorscoelho.docsapinterpreter.interpretadorfuncoes.NaoEhUmArquivoDocumentacaoSap2000
+import vitorscoelho.docsapinterpreter.interpretadorfuncoes.VersaoNaoDetectadaException
 import java.io.File
+
+private val arquivosQueNaoSaoFuncoes = listOf(
+    "Analysis_Results/Results/Analysis_Results_Remarks.htm",
+    "Analysis_Results/Results/Analysis_Results_Step_Number.htm",
+    "Analysis_Results/Results/Analysis_Results_Step_Type.htm",
+    "Analysis_Results/Results/Base_Reaction_Centroids.htm",
+    "Analysis_Results/Results/Item_Type_for_Elements.htm",
+    "Breaking_Changes_Between_v16_and_v17/Breaking_Changes.htm",
+    "Breaking_Changes_Between_v16_and_v17/Breaking_Changes_to_COM_Enumerations.htm",
+    "Breaking_Changes_Between_v16_and_v17/Breaking_Changes_to_NET_Enumerations.htm",
+    "Breaking_Changes_Between_v17_and_v18/Breaking_Changes_v18.htm",
+    "View/RefreshWindow_and_RefreshView.htm"
+)
+
+private fun ehFuncao(file: File): Boolean {
+    val nome = file.toString()
+    return !arquivosQueNaoSaoFuncoes.any { nome.endsWith(it) }
+}
 
 fun main() {
     val caminhoPasta = "/home/vitor/Pasta compartilhada VM/Sap20 Documentation/SAP2000_API_Fuctions"
@@ -13,17 +32,28 @@ fun main() {
     println(interpretador.tituloArquivo)
     println(interpretador.interpretadorReleaseNotes.versaoInicial)
     val arquivosNaoSap = arrayListOf<File>()
-    val versoes= hashSetOf<String>()
+    val versoes = hashSetOf<String>()
+    val versoesSemSubversao= hashSetOf<Int>()
     Pasta.getArquivos(pasta = File(caminhoPasta)).forEach {
         try {
             val interpretador2 = Interpretador(it)
             versoes.add(interpretador2.interpretadorReleaseNotes.versaoInicial)
+            versoesSemSubversao.add(interpretador2.interpretadorReleaseNotes.versaoInicialSemSubversao)
 //            println(interpretador2.interpretadorReleaseNotes.versaoInicial)
         } catch (e: NaoEhUmArquivoDocumentacaoSap2000) {
-            arquivosNaoSap.add(it)
+            if (ehFuncao(it)) {
+//                arquivosNaoSap.add(it)
+//            println("$it->${e.message}")
+            }
+        }catch (e:VersaoNaoDetectadaException){
+            if (ehFuncao(it)) {
+                arquivosNaoSap.add(it)
+            }
         }
     }
     versoes.sorted().forEach { println(it) }
+    versoesSemSubversao.sorted().forEach { println(it) }
+    arquivosNaoSap.forEach { println(it) }
 
 //    interpretador.elementsSyntax.forEach { println(it.text()) }
 //    interpretador.elementsVB6Procedure.forEach { println(it.text()) }
